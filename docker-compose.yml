@@ -1,0 +1,62 @@
+services:
+  client:
+    container_name: client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    image: mwaniki21/client:v0.0.1
+    ports:
+      - 3000:3000
+    networks:
+      frontend-net:
+        ipv4_address: 172.51.0.101
+    depends_on:
+      - backend
+
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: mwaniki21/backend:v0.0.1
+    ports:
+      - 5000:5000
+    environment:
+      PORT: 5000
+      MONGODB_URI: 'mongodb://mongodb:mongodb@172.100.0.101:27017'
+    networks:
+      backend-net:
+        ipv4_address: 172.100.0.100
+      frontend-net:
+        ipv4_address: 172.51.0.100
+    depends_on:
+      - database
+
+  database:
+    container_name: backend_database
+    ports:
+      - 27017:27017
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongodb
+      MONGO_INITDB_ROOT_PASSWORD: mongodb
+    networks:
+      backend-net:
+        ipv4_address: 172.100.0.101
+    volumes:
+      - backend_volume:/data/db
+
+networks:
+  backend-net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.100.0.0/16
+  frontend-net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.51.0.0/16
+
+volumes:
+  backend_volume:
